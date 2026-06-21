@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Конвертер валют</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0b0b0e; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .container { background: #1a1a20; padding: 2.5rem; border-radius: 1.5rem; max-width: 450px; width: 100%; border: 1px solid #2a2a34; }
+        h1 { font-size: 1.6rem; font-weight: 400; margin-bottom: 1.5rem; }
+        .currency-group { display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .currency-group select, .currency-group input { flex: 1; padding: 0.7rem; border-radius: 0.8rem; border: 1px solid #2a2a34; background: #121217; color: #fff; font-size: 1rem; min-width: 80px; }
+        .currency-group input { flex: 2; }
+        .result { font-size: 1.8rem; font-weight: 600; text-align: center; padding: 1rem; background: #121217; border-radius: 0.8rem; border: 1px solid #2a2a34; margin: 1rem 0; }
+        .update { font-size: 0.8rem; color: #6b6b7a; text-align: center; margin-top: 1rem; }
+        button { width: 100%; padding: 0.7rem; background: #00ff88; color: #0b0b0e; border: none; border-radius: 0.8rem; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; margin-top: 0.5rem; }
+        button:hover { background: #00cc77; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💱 Конвертер валют</h1>
+
+    <div class="currency-group">
+        <input type="number" id="amount" value="1">
+        <select id="fromCurrency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="RUB">RUB</option>
+            <option value="UZS" selected>UZS</option>
+        </select>
+    </div>
+
+    <div style="text-align: center; color: #6b6b7a; font-size: 1.2rem;">⬇️</div>
+
+    <div class="currency-group">
+        <span style="flex:2; padding: 0.7rem; background: #121217; border-radius: 0.8rem; border: 1px solid #2a2a34; color: #fff; font-size: 1.2rem; text-align: center;" id="resultDisplay">—</span>
+        <select id="toCurrency">
+            <option value="USD" selected>USD</option>
+            <option value="EUR">EUR</option>
+            <option value="RUB">RUB</option>
+            <option value="UZS">UZS</option>
+        </select>
+    </div>
+
+    <button id="convertBtn">Конвертировать</button>
+    <div class="update" id="updateInfo">⏳ загрузка...</div>
+</div>
+
+<script>
+    const amountInput = document.getElementById('amount');
+    const fromSelect = document.getElementById('fromCurrency');
+    const toSelect = document.getElementById('toCurrency');
+    const resultDisplay = document.getElementById('resultDisplay');
+    const convertBtn = document.getElementById('convertBtn');
+    const updateInfo = document.getElementById('updateInfo');
+
+    let rates = {};
+
+    async function fetchRates(base) {
+        const url = `https://api.exchangerate-api.com/v4/latest/${base}`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            rates = data.rates;
+            updateInfo.textContent = `🔄 Обновлено: ${new Date().toLocaleTimeString()}`;
+            return rates;
+        } catch (e) {
+            updateInfo.textContent = '⚠️ Ошибка загрузки курсов';
+            return null;
+        }
+    }
+
+    async function convert() {
+        const amount = parseFloat(amountInput.value) || 0;
+        const from = fromSelect.value;
+        const to = toSelect.value;
+
+        if (from === to) {
+            resultDisplay.textContent = amount.toFixed(2);
+            return;
+        }
+
+        if (!rates || rates[to] === undefined) {
+            await fetchRates(from);
+        }
+
+        if (rates && rates[to] !== undefined) {
+            const baseAmount = amount / rates[from];
+            const result = baseAmount * rates[to];
+            resultDisplay.textContent = result.toFixed(2);
+        } else {
+            resultDisplay.textContent = 'Ошибка';
+        }
+    }
+
+    convertBtn.addEventListener('click', convert);
+
+    fetchRates('USD');
+</script>
+</body>
+</html>
